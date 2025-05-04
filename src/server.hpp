@@ -1,6 +1,13 @@
+#pragma once 
+
 #include <vector>
 #include <filesystem>
 #include <chrono>
+#include <unordered_map>
+#include <queue>
+
+#include "event.hpp"
+#include "utils.hpp"
 
 class Server {
 public: 
@@ -8,29 +15,16 @@ public:
     void run();
 
 private: 
-    class Event {
-    public:
-        Event(const std::string& str_time, int id, std::vector<std::string>&& args) 
-        : time_(to_minutes(str_time)), id_(id), args_(std::move(args)) {}
-
-        int get_time() const {
-            return time_.count();
-        }
-
-    private:
-        std::chrono::minutes time_;
-        int id_;
-        std::vector<std::string> args_;
-    };
-
-    void parse();
-    Event parse_line(const std::string& str);
-    static std::chrono::minutes to_minutes(const std::string& str);
+    void handle_event(const Event& e);  // need to move into Event class 
 
     std::filesystem::path path_;
-    uint64_t table_number_;
-    std::chrono::minutes start_;
-    std::chrono::minutes end_;
-    uint64_t price_per_hour_;
-    std::vector<Event> events_;
+    util::Config conf_;
+
+    // under dev
+    std::unordered_map<int, util::Config> zxc;
+    std::unordered_map<int, std::tuple<std::string, int, std::chrono::minutes>> tables_; // table_number : <current_owner, total_salary, total_minutes>
+    std::queue<std::string> queue_;
+    //std::unordered_map<std::string, std::string> pool_; // client_name, start_time remake to std::set(unordered) 
+    //std::vector<Session> sessions_; // Session: <table_number, time_spent_on_current_table>
 };
+
