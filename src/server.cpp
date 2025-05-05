@@ -11,11 +11,16 @@ Server::Server(char* path) {
         path_ = std::filesystem::absolute(path_);
     }
 
-    Parser p(conf_, path_);
-    conf_ = p.parse();
+    Parser p(std::move(cfg_), path_);
+    cfg_ = p.parse();
 
-    for (int i = 1; i <= conf_.table_number_; i++) {
-        tables_[i] = std::make_tuple("", 0, std::chrono::minutes(0));
+    state_.price_per_hour_ = cfg_.price_per_hour_;
+    state_.table_number_ = cfg_.table_number_;
+    state_.start_ = cfg_.start_;
+    state_.end_ = cfg_.end_;
+
+    for (int i = 0; i < state_.table_number_ + 1; i++) {
+        state_.tables_[i] = State::TableData(); 
     }
 }
 
@@ -105,26 +110,21 @@ Server::Server(char* path) {
 //}
 
 void Server::run() {
-    std::cout << "inside run" << std::endl;
-    std::cout << util::time_to_string(conf_.start_) << std::endl;
+    std::cout << util::time_to_string(state_.start_) << std::endl;
     
-    for (auto i: conf_.events_) {
-        std::cout << util::time_to_string(i.get_time()) << " " << i.get_id();
-        for (auto j: i.get_args()) {
-            std::cout << j << " ";
-        }
-        std::cout << std::endl;
+    for (int i = 0; i < cfg_.events_.size(); i++) {
+        cfg_.events_[i]->handle(state_); 
     }
-    //for (const auto& event: conf_.events_) {
-    //    //handle_event(event);
-    //}
-    //
-    //std::vector<std::string> to_be_sorted(pool_.begin(), pool_.end());
-    //std::sort(to_be_sorted.begin(), to_be_sorted.end());
-    //for (auto& client: to_be_sorted) {
-    //    handle_event(Event(util::time_to_string(conf_.end_), 11, {client}));
-    //}
 
-    std::cout << util::time_to_string(conf_.end_) << std::endl;
+    // TODO: rest
+    
+    std::vector<std::string> to_be_sorted(state_.pool_.begin(), state_.pool_.end());
+    std::sort(to_be_sorted.begin(), to_be_sorted.end());
+
+    for (const auto& client: to_be_sorted) {
+        EventFactory::create(util::time_to_string(state_.end_), 11, client)->handle(state_);
+    }
+
+    std::cout << util::time_to_string(state_.end_) << std::endl;
 }
 

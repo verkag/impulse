@@ -4,18 +4,7 @@
 #include <iomanip>
 #include <regex>
 
-#include "event.hpp"
-
 namespace util {
-
-class Config {
-public:
-    uint64_t table_number_;
-    std::chrono::minutes start_;
-    std::chrono::minutes end_;
-    uint64_t price_per_hour_;
-    std::vector<Event> events_;
-};
 
 static std::chrono::minutes to_minutes(const std::string& str) {
     const std::regex format(R"(^\d{2}:\d{2}$)");
@@ -38,6 +27,16 @@ static std::string time_to_string(const std::chrono::minutes& time) {
     std::chrono::hh_mm_ss hms(time);
     oss << std::setfill('0') << std::setw(2) << hms.hours().count() << ":" << std::setw(2) << hms.minutes().count();
     return oss.str();
+}
+
+static bool is_valid_name(const std::string& str) {
+    if (!std::all_of(str.begin(), str.end(), [](char c){
+        return (c >= 'a' && c <= 'z') ||
+        (c >= '0' && c <= '9') ||
+        c == '-' ||
+        c == '_';
+    })) return false;
+    return true;
 }
 
 }

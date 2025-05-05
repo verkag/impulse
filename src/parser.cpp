@@ -5,44 +5,9 @@
 
 #include "parser.hpp"
 
-Parser::Parser(util::Config& c, const std::filesystem::path& p) : conf_(c), path_(p) {}
+Parser::Parser(Config&& c, const std::filesystem::path& p) : conf_(std::move(c)), path_(p) {}
 
-bool Parser::is_valid_name(const std::string& str) {
-    if (!std::all_of(str.begin(), str.end(), [](char c){
-        return (c >= 'a' && c <= 'z') ||
-        (c >= '0' && c <= '9') ||
-        c == '-' ||
-        c == '_';
-    })) return false;
-    return true;
-}
-
-bool Parser::is_suitable(const Event& e) {
-    const auto args = e.get_args();
-    switch (e.get_id()) {
-        case 1: 
-            if (args.size() != 1) return false;
-            if (!is_valid_name(args[0])) return false;
-            return true;
-        case 2: 
-            if (args.size() != 2) return false;
-            if (!is_valid_name(args[0])) return false;
-            if (std::stoi(args[1]) > conf_.table_number_) return false;
-            return true;
-        case 3: 
-            if (args.size() != 1) return false;
-            if (!is_valid_name(args[0])) return false;
-            return true;
-        case 4: 
-            if (args.size() != 1) return false;
-            if (!is_valid_name(args[0])) return false;
-            return true;
-        default: 
-            return false;
-    }
-}
-
-Event Parser::parse_line(const std::string& str) {
+std::unique_ptr<Event> Parser::parse_line(const std::string& str) {
     std::istringstream iss(str);
     std::string tmp;
 
@@ -52,14 +17,19 @@ Event Parser::parse_line(const std::string& str) {
     std::getline(iss, tmp, ' ');
     int id = std::stol(tmp); 
 
-    std::vector<std::string> args;
-    while(std::getline(iss, tmp, ' ')) {
-        args.push_back(tmp);
+    int table_number = 0;
+
+    std::string str_arg;
+    std::getline(iss, str_arg, ' ');
+    if (std::getline(iss, tmp, ' ')) {
+        table_number = std::stol(tmp);
+        if (table_number > conf_.table_number_ || table_number == 0) throw std::exception();
     }
 
     if (std::isspace(static_cast<unsigned char>(str.back()))) throw std::exception();
-    return Event(time, id, std::move(args)); 
+    return EventFactory::create(time, id, str_arg, table_number); 
 }
+
 void Parser::parse_config(std::ifstream& ifs) {
     std::string tmp;
 
@@ -108,17 +78,14 @@ void Parser::parse_events(std::ifstream& ifs) {
     std::unique_ptr<std::chrono::minutes> last = nullptr;
     while (std::getline(ifs, tmp)) {
         try {
-            const auto event = parse_line(tmp);
+            auto event = parse_line(tmp);
             if (last != nullptr) {
-                if (*last > event.get_time()) throw std::exception();
+                if (*last > event->get_time()) throw std::exception();
             }
-            if (is_suitable(event)) {
-                conf_.events_.push_back(event);
-                last = std::make_unique<std::chrono::minutes>(event.get_time());
-            } else { 
-                std::cout << tmp << std::endl;
-                std::exit(EXIT_FAILURE);
-            }
+
+            last = std::make_unique<std::chrono::minutes>(event->get_time());
+
+            conf_.events_.push_back(std::move(event));
         } catch (...) {
             std::cout << tmp << std::endl; 
             std::exit(EXIT_FAILURE);
@@ -126,15 +93,17 @@ void Parser::parse_events(std::ifstream& ifs) {
     }
 }
 
-util::Config Parser::parse() {
+Config Parser::parse() {
     std::ifstream stream(path_); 
     if (!stream) {
         std::cerr << "failed to open file" << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
+
     parse_config(stream);
     parse_events(stream);
 
-    return conf_;
+
+    return std::move(conf_);
 }
