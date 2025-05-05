@@ -4,11 +4,11 @@
 
 class Config {
 public:
-    uint64_t table_number_;
-    std::chrono::minutes start_;
-    std::chrono::minutes end_;
-    uint64_t price_per_hour_;
-    std::vector<std::unique_ptr<Event>> events_;
+    uint64_t table_number;
+    std::chrono::minutes start;
+    std::chrono::minutes end;
+    uint64_t price_per_hour;
+    std::vector<std::unique_ptr<Event>> events;
 
     // TODO constructors
 

@@ -23,7 +23,7 @@ std::unique_ptr<Event> Parser::parse_line(const std::string& str) {
     std::getline(iss, str_arg, ' ');
     if (std::getline(iss, tmp, ' ')) {
         table_number = std::stol(tmp);
-        if (table_number > conf_.table_number_ || table_number == 0) throw std::exception();
+        if (table_number > conf_.table_number || table_number == 0) throw std::exception();
     }
 
     if (std::isspace(static_cast<unsigned char>(str.back()))) throw std::exception();
@@ -37,8 +37,8 @@ void Parser::parse_config(std::ifstream& ifs) {
         std::getline(ifs, tmp);
         bool only_digits = !tmp.empty() && std::all_of(tmp.begin(), tmp.end(), ::isdigit);
         if (!only_digits) throw std::exception();
-        conf_.table_number_ = std::stol(tmp);
-        if (conf_.table_number_ <= 0) throw std::exception();
+        conf_.table_number = std::stol(tmp);
+        if (conf_.table_number <= 0) throw std::exception();
     } catch (...) {
         std::cout << tmp << std::endl;
         std::exit(EXIT_FAILURE);
@@ -49,12 +49,12 @@ void Parser::parse_config(std::ifstream& ifs) {
         std::istringstream iss(tmp);
         std::string tmp2; 
         std::getline(iss, tmp2, ' '); 
-        conf_.start_ = util::to_minutes(tmp2);
+        conf_.start = util::to_minutes(tmp2);
         std::getline(iss, tmp2, ' '); 
-        conf_.end_ = util::to_minutes(tmp2);
+        conf_.end = util::to_minutes(tmp2);
         if (std::getline(iss, tmp2, ' ')) throw std::exception();
         if (std::isspace(static_cast<unsigned char>(tmp.back()))) throw std::exception();
-        if (conf_.start_ > conf_.end_) throw std::exception();
+        if (conf_.start > conf_.end) throw std::exception();
     } catch (...) {
         std::cout << tmp << std::endl;
         std::exit(EXIT_FAILURE);
@@ -64,8 +64,8 @@ void Parser::parse_config(std::ifstream& ifs) {
         std::getline(ifs, tmp);
         bool only_digits = !tmp.empty() && std::all_of(tmp.begin(), tmp.end(), ::isdigit);
         if (!only_digits) throw std::exception();
-        conf_.price_per_hour_ = std::stol(tmp); 
-        if (conf_.price_per_hour_ <= 0) throw std::exception();
+        conf_.price_per_hour = std::stol(tmp); 
+        if (conf_.price_per_hour <= 0) throw std::exception();
     } catch (...) {
         std::cout << tmp << std::endl; 
         std::exit(EXIT_FAILURE);
@@ -85,7 +85,7 @@ void Parser::parse_events(std::ifstream& ifs) {
 
             last = std::make_unique<std::chrono::minutes>(event->get_time());
 
-            conf_.events_.push_back(std::move(event));
+            conf_.events.push_back(std::move(event));
         } catch (...) {
             std::cout << tmp << std::endl; 
             std::exit(EXIT_FAILURE);
@@ -99,7 +99,6 @@ Config Parser::parse() {
         std::cerr << "failed to open file" << std::endl;
         std::exit(EXIT_FAILURE);
     }
-
 
     parse_config(stream);
     parse_events(stream);
