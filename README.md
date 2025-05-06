@@ -15,6 +15,11 @@ cmake --build .
 
 Some tests are located in tests/ folder.
 
+
+## Important
+Due to unspecified requirement, leading and trailing whitespaces are not allowed, separating is done with single space char.
+
+
 ## Issues
 #### Task uncertainties 
 1. It is unclear what to do with events, that overdue ending time.
