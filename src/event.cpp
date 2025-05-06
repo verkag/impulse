@@ -39,7 +39,7 @@ std::string Event1::get_client() const {
 // client sat 
 Event2::Event2(const std::string& str_time, int id, const std::string& client, int table_number) : Event(str_time, id), client_(client), table_number_(table_number) {}
 void Event2::handle(State& s) {
-    std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << std::endl;
+    std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << " " << get_table_number() << std::endl;
     if (s.tables[get_table_number()].current_owner != "") {
         EventFactory::create(util::time_to_string(get_time()), 13, "PlaceIsBusy")->handle(s);
         return;
@@ -48,16 +48,14 @@ void Event2::handle(State& s) {
         EventFactory::create(util::time_to_string(get_time()), 13, "ClientUnknown")->handle(s);
         return;
     }
-    for (int i = 1; i < s.tables.size(); i++) { // not optimal
+    for (int i = 1; i < s.table_number + 1; i++) { // not optimal
         if (s.tables[i].current_owner == get_client()) {
             s.tables[i].current_owner = ""; 
         }
     }
 
     s.tables[get_table_number()].current_owner = get_client();
-
     s.session_manager.start_session(get_table_number(), get_time());
-
     return;
 }
 std::string Event2::get_client() const {
@@ -72,7 +70,7 @@ int Event2::get_table_number() const {
 Event3::Event3(const std::string& str_time, int id, const std::string& client) : Event(str_time, id), client_(client) {}
 void Event3::handle(State& s) {
     std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << std::endl;
-    for (int i = 1; i < s.tables.size(); i++) { // not optimal
+    for (int i = 1; i < s.table_number + 1; i++) { // not optimal
         if (s.tables[i].current_owner == "") {
             EventFactory::create(util::time_to_string(get_time()), 13, "ICanWaitNoLonger")->handle(s);
             return;
@@ -99,16 +97,16 @@ void Event4::handle(State& s) {
         return;
     }
 
-    for (int i = 1; i < s.tables.size(); i++) {
+    for (int i = 1; i < s.table_number + 1; i++) {
         if (s.tables[i].current_owner == get_client()) {
             if (s.queue.size() > 0) {
                 auto [salary, minutes] = s.session_manager.estimate(i, get_time());
                 s.tables[i].total_salary += salary;
                 s.tables[i].total_minutes += minutes;
                 
-                s.pool.erase(s.tables[i].current_owner);
+                s.pool.erase(get_client());
                 s.tables[i].current_owner = "";
-                EventFactory::create(util::time_to_string(get_time()), 12, get_client(), i)->handle(s);
+                EventFactory::create(util::time_to_string(get_time()), 12, s.queue.front(), i)->handle(s);
             } else {
                 auto [salary, minutes] = s.session_manager.estimate(i, get_time());
                 s.tables[i].total_salary += salary;
@@ -120,6 +118,8 @@ void Event4::handle(State& s) {
             return;
         }
     }
+
+    s.pool.erase(get_client());
     return;
 }
 std::string Event4::get_client() const {
@@ -132,11 +132,12 @@ Event11::Event11(const std::string& str_time, int id, const std::string& client)
 void Event11::handle(State& s) {
     std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << std::endl;
     
-    for (int i = 1; i < s.tables.size(); i++) {
+    for (int i = 1; i < s.table_number + 1; i++) {
         if (s.tables[i].current_owner == get_client()) {
             auto [salary, minutes] = s.session_manager.estimate(i, get_time());
             s.tables[i].total_salary += salary;
             s.tables[i].total_minutes += minutes;
+            s.tables[i].current_owner = "";
         }
     }
 
@@ -151,7 +152,7 @@ std::string Event11::get_client() const {
 // client sat
 Event12::Event12(const std::string& str_time, int id, const std::string& client, int table_number) : Event(str_time, id), client_(client), table_number_(table_number) {}
 void Event12::handle(State& s) {
-    std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << std::endl;
+    std::cout << util::time_to_string(get_time()) << " " << get_id() << " " << get_client() << " " << get_table_number() << std::endl;
     s.tables[get_table_number()].current_owner = s.queue.front(); 
     s.queue.pop();
 

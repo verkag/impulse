@@ -83,6 +83,7 @@ void Parser::parse_events(std::ifstream& ifs) {
                 if (*last > event->get_time()) throw std::exception();
             }
 
+
             last = std::make_unique<std::chrono::minutes>(event->get_time());
 
             conf_.events.push_back(std::move(event));
@@ -101,6 +102,11 @@ Config Parser::parse() {
     }
 
     parse_config(stream);
+   // std::cout << "config parsed: " << conf_.table_number << " "
+   //     << util::time_to_string(conf_.start) << " "
+   //     << util::time_to_string(conf_.end) << " "
+   //     << conf_.price_per_hour << std::endl;
+
     parse_events(stream);
 
 
