@@ -17,7 +17,7 @@ Some tests are located in tests/ folder.
 
 
 ## Important
-Due to unspecified requirement, leading and trailing whitespaces are not allowed, separating is done with single space char.
+Due to unspecified requirements, leading and trailing whitespaces are not allowed, separating is done with single space char.
 
 
 ## Issues
